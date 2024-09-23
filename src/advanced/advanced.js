@@ -78,33 +78,35 @@ function parseRequest(req) {
     body: null,
     query: null
   }
-  console.log(req)
   // call the other functions below as needed
-  request.method = req.substring(0, req.indexOf('/') - 1).trim()
-  req = req.substring(req.indexOf('/'))
+  request.method = req.substring(0, req.indexOf(' ')).trim()
+  const path = req.substring(
+    req.indexOf(' ') + 1,
+    req.indexOf(' ', req.indexOf(' ') + 1)
+  )
 
-  let end = -1
-  if (req.indexOf('?') !== -1) {
-    end = req.indexOf('?')
+  if (path.indexOf('?') === -1) {
+    request.path = path
   } else {
-    end = req.indexOf(' ')
+    request.path = path.substring(0, path.indexOf('?'))
   }
-  request.path = req.substring(req.indexOf('/'), end)
-  const path = req.substring(req.indexOf('/'), req.indexOf(' '))
+
   req = req.substring(req.indexOf('\n'))
 
-  const headers = req
-    .substring(req.indexOf('\n'), req.indexOf('\n\n'))
-    .split('\n')
+  let headers = ''
+  if (req.includes('{')) {
+    headers = req.substring(req.indexOf('\n'), req.indexOf('\n\n')).split('\n')
+  } else {
+    headers = req.substring(req.indexOf('\n')).split('\n')
+  }
   headers.forEach((element) => {
     request.headers = parseHeader(element, request.headers)
   })
 
-  req = req.substring(req.indexOf('\n\n')).trim()
-  request.body = parseBody(req)
+  const body = req.substring(req.indexOf('{'), req.indexOf('}') + 1)
+  request.body = parseBody(body)
 
   request.query = extractQuery(path)
-  console.log(request)
   return request
 }
 
